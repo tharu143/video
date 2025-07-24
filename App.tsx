@@ -1,28 +1,43 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+// App.tsx
+import React, { useState, useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { firebaseAuth } from './src/config/firebase';
+import AppNavigator from './src/navigation/AppNavigator';
+import LoginScreen from './src/screens/LoginScreen';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StatusBar } from 'react-native';
+// Pudhu modular function-ah import panrom
+import { onAuthStateChanged } from '@react-native-firebase/auth';
+import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+const App: React.FC = () => {
+  // Set an initializing state whilst Firebase connects
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+  useEffect(() => {
+    // Pudhu modular style-la onAuthStateChanged-ah use panrom
+    const subscriber = onAuthStateChanged(firebaseAuth, (user) => {
+      setUser(user);
+      if (initializing) {
+        setInitializing(false);
+      }
+    });
+    return subscriber; // unsubscribe on unmount
+  }, [initializing]);
+
+  if (initializing) {
+    return null; // or a loading screen
+  }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <NewAppScreen templateFileName="App.tsx" />
-    </View>
+    <SafeAreaProvider>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <NavigationContainer>
+        {user ? <AppNavigator /> : <LoginScreen />}
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
+};
 
 export default App;
